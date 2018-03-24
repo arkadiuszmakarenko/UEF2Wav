@@ -4,7 +4,7 @@ using System.Text;
 
 namespace UEF2Wav
 {
-   public class GenerateWave
+   public class GenerateSinWave
     {
         //baud 1200
         //phase 180
@@ -23,31 +23,28 @@ namespace UEF2Wav
             return array;
         }
 
-        public static Int16[] bit0(int sampleRate, double phase = 180)
+        public static Int16[] bit0(int sampleRate,int baud = 1200, double phase = 180)
         {
             var NewPhase = phase * (Math.PI / 180);
-            var baud = 1200;
+
             return generateTone(baud, 1, NewPhase, sampleRate);
         }
 
-        public static Int16[] bit1(int sampleRate, double phase = 180)
+        public static Int16[] bit1(int sampleRate, int baud = 1200, double phase = 180)
         {
             var NewPhase = phase * (Math.PI / 180);
-            var baud = 1200;
             return generateTone(baud * 2, 2, NewPhase, sampleRate);
         }
 
-        public static Int16[] stopBit(int sampleRate, double phase = 180)
+        public static Int16[] stopBit(int sampleRate, int baud = 1200, double phase = 180)
         {
             var NewPhase = phase * (Math.PI / 180);
-            var baud = 1200;
             return generateTone(baud * 2, 2, NewPhase, sampleRate);
         }
 
-        public static Int16[] highWave(int sampleRate, double phase = 180 )
+        public static Int16[] highWave(int sampleRate, int baud = 1200, double phase = 180)
         {
             var NewPhase = phase * (Math.PI / 180);
-            var baud = 1200;
             return generateTone(baud * 2, 1, NewPhase, sampleRate);
         }
 
