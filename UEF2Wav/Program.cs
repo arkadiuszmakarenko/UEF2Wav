@@ -23,7 +23,7 @@ namespace UEF2Wav
 
 
 
-            if (args[0] == "--all")
+            if (args.Length != 0 && args[0] == "--all")
             {
                 string[] files = Directory.GetFiles(".", "*.uef", SearchOption.TopDirectoryOnly);
 
@@ -34,7 +34,7 @@ namespace UEF2Wav
                     Console.WriteLine(outputFileName);
                     var ueffile = File.ReadAllBytes(fileName);
                     var decompresseduef = Decompress(ueffile);
-                    var uefChunkCollection = ParseUEF(decompresseduef);
+                    var uefChunkCollection = ParseUEF.Parse(decompresseduef);
                     BuildWAV.Generate(uefChunkCollection, outputFileName, 1200);
                     uefChunkCollection = null;
                     Console.WriteLine(fileName+" completed");
@@ -42,7 +42,8 @@ namespace UEF2Wav
                 }
                 Environment.Exit(0);
             }
-
+        string[] temp = {"C:\\uef\\VideoClassics_E.hq.uef"};
+        args = temp;
 
             byte[] file = null;
             byte[] decompressed = null;
@@ -50,6 +51,7 @@ namespace UEF2Wav
             try
             {
                 file = File.ReadAllBytes(args[0]);
+           
             }
             catch (FileNotFoundException)
             {
@@ -74,7 +76,9 @@ namespace UEF2Wav
 
             try
             {
-                ChunkCollection = ParseUEF(decompressed);
+                ChunkCollection = ParseUEF.Parse(decompressed);
+                var MaVer = ParseUEF.MajorVersion(decompressed);
+                var MiVer = ParseUEF.MinorVersion(decompressed);
             }
             catch
             {
@@ -82,12 +86,20 @@ namespace UEF2Wav
             }
 
 
+                foreach(var chunk in ChunkCollection)
+                {
+                    
+                    
+
+                }
+
             try
             {
                 BuildWAV.Generate(ChunkCollection, args[0].Split('.')[0], 1200);
             }
-            catch
+            catch (Exception ex)
             {
+                var x = ex;
                 Console.WriteLine("Something went wrong during WAV file generation.");
             }
 
@@ -97,36 +109,7 @@ namespace UEF2Wav
 
         }
 
-        static List<ChunkDataItem> ParseUEF(byte[] uefFile)
-        {
-            int chunkHeaderStartIndex = 12;
-
-            var MinorVersion = (int)uefFile[10];
-         
-
-            var MajorVersion = (int)uefFile[11];
-
-            Console.WriteLine("Version: "+MajorVersion + "." + MinorVersion);
-
-
-            List<ChunkDataItem> ChunkData = new List<ChunkDataItem>();
-            while (chunkHeaderStartIndex < uefFile.Length)
-            {
-                var Lenght = new byte[4];
-                int LenghtInt;
-                var chunkObj = new ChunkDataItem();
-                chunkObj.Header = new byte[2];
-                Array.Copy(uefFile, chunkHeaderStartIndex, chunkObj.Header, 0, 2);
-                Array.Copy(uefFile, chunkHeaderStartIndex + 2, Lenght, 0, 4);
-                LenghtInt = BitConverter.ToInt32(Lenght, 0);
-                chunkObj.Data = new byte[LenghtInt];
-                Array.Copy(uefFile, chunkHeaderStartIndex + 6, chunkObj.Data, 0, LenghtInt);
-                chunkHeaderStartIndex = chunkHeaderStartIndex + LenghtInt + 6;
-                ChunkData.Add(chunkObj);
-
-            }
-            return ChunkData;
-        }
+     
 
     
 

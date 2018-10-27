@@ -44,7 +44,7 @@ namespace UEF2Wav
 
 
                 var headerValue = String.Format(format, ChunkDataItem.Header[0], ChunkDataItem.Header[1]);
-
+                Console.WriteLine(headerValue);
                 ChunkUniqueList.Add(headerValue);
 
 
@@ -182,8 +182,8 @@ namespace UEF2Wav
                 if (headerValue == "x0114") //security waves
                 {
 
-                    double sec = BitConverter.ToDouble(ChunkDataItem.Data, 0);
-                    var gapSamples = samplesPerSecond * sec;
+                    double sec = BitConverter.ToInt16(ChunkDataItem.Data, 0);
+                    var gapSamples = (samplesPerSecond * sec);
 
                     for (int g = 0; g <= gapSamples; g++)
                     {
@@ -196,7 +196,7 @@ namespace UEF2Wav
                 if (headerValue == "x0116") //Chunk &0116 - floating point gap
                 {
 
-                    double sec = BitConverter.ToDouble(ChunkDataItem.Data, 0);
+                    double sec = BitConverter.ToSingle(ChunkDataItem.Data, 0);
                     var gapSamples = samplesPerSecond * sec;
 
                     for (int g = 0; g <= gapSamples; g++)
