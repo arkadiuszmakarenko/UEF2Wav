@@ -9,7 +9,7 @@ namespace UEF2Wav
    public class BuildWAV
     {
 
-       public static void Generate(List<ChunkDataItem> ChunksList, string fileName, int baud)
+       public static void Generate(List<ChunkDataItem> ChunksList, string fileName, int baud, bool invertParity)
         {
 
             // HashSet to check what chunks are used in collection
@@ -25,11 +25,11 @@ namespace UEF2Wav
             short formatType = 1;
             short tracks = 1;
             int samplesPerSecond = 44100;
+            var samplesPerCycle = 36;
             short bitsPerSample = 16;
             short frameSize = (short)(tracks * ((bitsPerSample) / 8));
             int bytesPerSecond = samplesPerSecond * frameSize;
             int waveSize = 4;
-            int sampleCount = 0;
 
             var bit0Array = GenerateSinWave.bit0(samplesPerSecond, baud);
             var bit1Array = GenerateSinWave.bit1(samplesPerSecond, baud);
@@ -50,6 +50,9 @@ namespace UEF2Wav
 
                 if (headerValue == "x0100") //Chunk &0100 - implicit start/stop bit tape data block
                 {
+
+
+
                     foreach (byte myByte in ChunkDataItem.Data)
                     {
                         bool[] deliveryBitArray = new bool[10];
@@ -72,7 +75,6 @@ namespace UEF2Wav
                                 foreach (var sample in bit0Array)
                                 {
                                     dataStreamWriter.Write(sample);
-                                    sampleCount = sampleCount + 1;
                                 }
                             }
                             else // 1
@@ -80,13 +82,16 @@ namespace UEF2Wav
                                 foreach (var sample in bit1Array)
                                 {
                                     dataStreamWriter.Write(sample);
-                                    sampleCount = sampleCount + 1;
+                                    
                                 }
                             }
                         }
+                        
 
                     }
                 }
+
+
 
                 if (headerValue == "x0110") //Chunk &0110 - carrier tone (previously referred to as 'high tone')
                 {
@@ -97,7 +102,6 @@ namespace UEF2Wav
                         foreach (var sample in highWaveArray)
                         {
                             dataStreamWriter.Write(sample);
-                            sampleCount = sampleCount + 1;
                         }
                     }
                 }
@@ -120,7 +124,6 @@ namespace UEF2Wav
                         foreach (var sample in highWaveArray)
                         {
                             dataStreamWriter.Write(sample);
-                            sampleCount = sampleCount + 1;
                         }
                     }
 
@@ -137,7 +140,6 @@ namespace UEF2Wav
                             foreach (var sample in bit0Array)
                             {
                                 dataStreamWriter.Write(sample);
-                                sampleCount = sampleCount + 1;
                             }
                         }
                         else // 1
@@ -145,7 +147,6 @@ namespace UEF2Wav
                             foreach (var sample in bit1Array)
                             {
                                 dataStreamWriter.Write(sample);
-                                sampleCount = sampleCount + 1;
                             }
                         }
 
@@ -156,7 +157,6 @@ namespace UEF2Wav
                             foreach (var sample in highWaveArray)
                             {
                                 dataStreamWriter.Write(sample);
-                                sampleCount = sampleCount + 1;
                             }
                         }
 
@@ -165,45 +165,47 @@ namespace UEF2Wav
 
                 }
 
+
+
                 if (headerValue == "x0112")
                 {
                     var n = BitConverter.ToInt16(ChunkDataItem.Data, 0);
-                    double sec = (double)n / (2 * (double)baud);
-                    var gapcycles = samplesPerSecond * sec;
+                    double sec = 1 / (2 *  (double)n * (double)baud);
+                    var testGap = samplesPerSecond * sec;
+                    var gapcycles = samplesPerCycle * n;
 
                     for (int g = 0; g <= gapcycles; g++)
                     {
                         dataStreamWriter.Write(0);
-                        sampleCount = sampleCount + 1;
-
                     }
                 }
 
                 if (headerValue == "x0114") //security waves
                 {
 
-                    double sec = BitConverter.ToInt16(ChunkDataItem.Data, 0);
-                    var gapSamples = (samplesPerSecond * sec);
+                    var cycles = BitConverter.ToUInt32(ChunkDataItem.Data, 0) & 0x00ffffff;
 
-                    for (int g = 0; g <= gapSamples; g++)
-                    {
-                        dataStreamWriter.Write(0);
-                        sampleCount = sampleCount + 1;
 
-                    }
+                   for (var count = 0; count < cycles; count++)
+                        {
+                            foreach (var sample in highWaveArray)
+                            {
+                                dataStreamWriter.Write(sample);
+                            }
+                        }
                 }
 
                 if (headerValue == "x0116") //Chunk &0116 - floating point gap
                 {
 
-                    double sec = BitConverter.ToSingle(ChunkDataItem.Data, 0);
-                    var gapSamples = samplesPerSecond * sec;
+                    double sec = Math.Ceiling(BitConverter.ToSingle(ChunkDataItem.Data, 0));
+                     var gapSamples = samplesPerSecond * sec;
+                
+                    
 
                     for (int g = 0; g <= gapSamples; g++)
                     {
                         dataStreamWriter.Write(0);
-                        sampleCount = sampleCount + 1;
-
                     }
                 }
 
@@ -213,12 +215,13 @@ namespace UEF2Wav
 
 
 
-            int dataChunkSize = sampleCount * frameSize;
+            int dataChunkSize = (int)dataStream.Length * frameSize;
             int fileSize = waveSize + headerSize + formatChunkSize + headerSize + dataChunkSize;
-
+            var x = dataStream.Length ;
             FileStream headerStream = new FileStream(fileName + ".wav", FileMode.Create);
 
             BinaryWriter headerStreamWriter = new BinaryWriter(headerStream);
+
 
             headerStreamWriter.Write(0x46464952); // = encoding.GetBytes("RIFF")
             headerStreamWriter.Write(fileSize);

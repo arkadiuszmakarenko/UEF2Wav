@@ -35,15 +35,14 @@ namespace UEF2Wav
                     var ueffile = File.ReadAllBytes(fileName);
                     var decompresseduef = Decompress(ueffile);
                     var uefChunkCollection = ParseUEF.Parse(decompresseduef);
-                    BuildWAV.Generate(uefChunkCollection, outputFileName, 1200);
+                    BuildWAV.Generate(uefChunkCollection, outputFileName, 1200,false);
                     uefChunkCollection = null;
                     Console.WriteLine(fileName+" completed");
 
                 }
                 Environment.Exit(0);
             }
-        string[] temp = {"C:\\uef\\VideoClassics_E.hq.uef"};
-        args = temp;
+      
 
             byte[] file = null;
             byte[] decompressed = null;
@@ -95,7 +94,9 @@ namespace UEF2Wav
 
             try
             {
-                BuildWAV.Generate(ChunkCollection, args[0].Split('.')[0], 1200);
+                var MinorVer = ParseUEF.MajorVersion(decompressed);
+                var MajorVer = ParseUEF.MinorVersion(decompressed);
+                BuildWAV.Generate(ChunkCollection, args[0].Split('.')[0], 1200,false);
             }
             catch (Exception ex)
             {
@@ -105,7 +106,8 @@ namespace UEF2Wav
 
 
 
-            Console.ReadLine();
+            
+            
 
         }
 
